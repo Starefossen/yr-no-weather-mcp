@@ -72,5 +72,21 @@ echo "--- Precipitation: 60.39,5.32 ---"
 post '{"jsonrpc":"2.0","id":5,"method":"tools/call","params":{"name":"get_precipitation","arguments":{"location":"60.39,5.32"}}}'
 read_response
 
+# Norwegian characters (ø, å, æ)
+echo ""
+echo "--- Forecast: Haugastøl (ø) ---"
+post '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"get_forecast","arguments":{"location":"Haugastøl"}}}'
+read_response
+
+echo ""
+echo "--- Forecast: Tromsø (ø) ---"
+post '{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"get_forecast","arguments":{"location":"Tromsø"}}}'
+read_response
+
+echo ""
+echo "--- Forecast: Ålesund (å) ---"
+post '{"jsonrpc":"2.0","id":8,"method":"tools/call","params":{"name":"get_forecast","arguments":{"location":"Ålesund"}}}'
+read_response
+
 echo ""
 echo "=== Done ==="

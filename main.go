@@ -9,6 +9,7 @@ import (
 	"log"
 	"math"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
@@ -151,7 +152,7 @@ func (ws *WeatherServer) geocode(ctx context.Context, name string) (float64, flo
 	}
 	ws.geoCacheMu.RUnlock()
 
-	url := fmt.Sprintf("%s?sok=%s&fuzzy=true&treffPerSide=1&utkoordsys=4258", ws.geoBaseURL, name)
+	url := fmt.Sprintf("%s?sok=%s&fuzzy=true&treffPerSide=1&utkoordsys=4258", ws.geoBaseURL, url.QueryEscape(name))
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return 0, 0, "", fmt.Errorf("failed to create geocoding request: %w", err)

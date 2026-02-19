@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -190,6 +191,40 @@ func TestGeocodeCacheExpired(t *testing.T) {
 	}
 }
 
+func TestGeocodeURLEncoding(t *testing.T) {
+	var receivedRawQuery string
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedRawQuery = r.URL.RawQuery
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(map[string]interface{}{
+			"navn": []map[string]interface{}{
+				{
+					"stedsnavn":            []map[string]interface{}{{"skrivemåte": "Haugastøl"}},
+					"kommuner":             []map[string]interface{}{{"kommunenavn": "Hol"}},
+					"representasjonspunkt": map[string]interface{}{"nord": 60.512, "øst": 7.8631},
+				},
+			},
+		})
+	}))
+	defer srv.Close()
+
+	ws := NewWeatherServer()
+	ws.geoBaseURL = srv.URL
+
+	_, _, _, err := ws.geocode(context.Background(), "Haugastøl")
+	if err != nil {
+		t.Fatalf("geocode failed: %v", err)
+	}
+
+	// The ø must be percent-encoded in the query string
+	if !strings.Contains(receivedRawQuery, "sok=Haugast") {
+		t.Fatalf("unexpected query: %s", receivedRawQuery)
+	}
+	if strings.Contains(receivedRawQuery, "sok=Haugastøl") {
+		t.Errorf("query contains raw UTF-8 ø — must be percent-encoded: %s", receivedRawQuery)
+	}
+}
+
 func TestWeatherCacheHit(t *testing.T) {
 	ws := NewWeatherServer()
 
@@ -217,15 +252,24 @@ func newMockGeoServer(t *testing.T) *httptest.Server {
 	t.Helper()
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		sok := r.URL.Query().Get("sok")
-		locations := map[string][2]float64{
-			"Bergen": {60.3932, 5.3245},
-			"bergen": {60.3932, 5.3245},
-			"Oslo":   {59.9133, 10.7389},
-			"oslo":   {59.9133, 10.7389},
-			"Tromsø": {69.6496, 18.9560},
-			"tromsø": {69.6496, 18.9560},
+		locations := map[string]struct {
+			coords  [2]float64
+			kommune string
+		}{
+			"Bergen":    {coords: [2]float64{60.3932, 5.3245}, kommune: "Bergen"},
+			"bergen":    {coords: [2]float64{60.3932, 5.3245}, kommune: "Bergen"},
+			"Oslo":      {coords: [2]float64{59.9133, 10.7389}, kommune: "Oslo"},
+			"oslo":      {coords: [2]float64{59.9133, 10.7389}, kommune: "Oslo"},
+			"Tromsø":    {coords: [2]float64{69.6496, 18.9560}, kommune: "Tromsø"},
+			"tromsø":    {coords: [2]float64{69.6496, 18.9560}, kommune: "Tromsø"},
+			"Haugastøl": {coords: [2]float64{60.5120, 7.8631}, kommune: "Hol"},
+			"haugastøl": {coords: [2]float64{60.5120, 7.8631}, kommune: "Hol"},
+			"Ålesund":   {coords: [2]float64{62.4722, 6.1549}, kommune: "Ålesund"},
+			"ålesund":   {coords: [2]float64{62.4722, 6.1549}, kommune: "Ålesund"},
+			"Ærøy":      {coords: [2]float64{59.0167, 5.7833}, kommune: "Stavanger"},
+			"ærøy":      {coords: [2]float64{59.0167, 5.7833}, kommune: "Stavanger"},
 		}
-		coords, ok := locations[sok]
+		loc, ok := locations[sok]
 		if !ok {
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(map[string]interface{}{"navn": []interface{}{}})
@@ -238,11 +282,11 @@ func newMockGeoServer(t *testing.T) *httptest.Server {
 						{"skrivemåte": sok},
 					},
 					"kommuner": []map[string]interface{}{
-						{"kommunenavn": sok},
+						{"kommunenavn": loc.kommune},
 					},
 					"representasjonspunkt": map[string]interface{}{
-						"nord": coords[0],
-						"øst":  coords[1],
+						"nord": loc.coords[0],
+						"øst":  loc.coords[1],
 					},
 				},
 			},
@@ -340,6 +384,40 @@ func TestHandleGetForecastWithMock(t *testing.T) {
 	}
 	if !contains(text, "Bergen") {
 		t.Errorf("forecast should mention Bergen, got: %s", text)
+	}
+}
+
+func TestHandleGetForecastNorwegianLocations(t *testing.T) {
+	mock := newMockMetServer(t)
+	defer mock.Close()
+	geo := newMockGeoServer(t)
+	defer geo.Close()
+
+	ws := newTestWeatherServer(t, mock.URL, geo.URL)
+
+	locations := []struct {
+		location string
+		wantIn   string
+	}{
+		{"Haugastøl", "Haugastøl"},
+		{"Tromsø", "Tromsø"},
+		{"Ålesund", "Ålesund"},
+		{"Ærøy", "Ærøy"},
+	}
+
+	for _, tt := range locations {
+		t.Run(tt.location, func(t *testing.T) {
+			result := callTool(t, ws.handleGetForecast, map[string]interface{}{
+				"location": tt.location,
+			})
+			if result.IsError {
+				t.Fatalf("get_forecast(%q) failed: %v", tt.location, result.Content)
+			}
+			text := getResultText(t, result)
+			if !contains(text, tt.wantIn) {
+				t.Errorf("forecast should mention %q, got: %s", tt.wantIn, text)
+			}
+		})
 	}
 }
 
@@ -476,6 +554,44 @@ func TestGeocodeWithMock(t *testing.T) {
 	}
 	if lat2 != lat || lon2 != lon || name2 != name {
 		t.Error("cached geocode returned different values")
+	}
+}
+
+func TestGeocodeNorwegianCharacters(t *testing.T) {
+	geo := newMockGeoServer(t)
+	defer geo.Close()
+
+	ws := NewWeatherServer()
+	ws.geoBaseURL = geo.URL
+
+	tests := []struct {
+		name    string
+		wantLat float64
+		wantLon float64
+		wantIn  string
+	}{
+		{"Haugastøl", 60.512, 7.8631, "Hol"},
+		{"Tromsø", 69.6496, 18.956, "Tromsø"},
+		{"Ålesund", 62.4722, 6.1549, "Ålesund"},
+		{"Ærøy", 59.0167, 5.7833, "Stavanger"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			lat, lon, displayName, err := ws.geocode(context.Background(), tt.name)
+			if err != nil {
+				t.Fatalf("geocode(%q) failed: %v", tt.name, err)
+			}
+			if lat != tt.wantLat {
+				t.Errorf("lat = %f, want %f", lat, tt.wantLat)
+			}
+			if lon != tt.wantLon {
+				t.Errorf("lon = %f, want %f", lon, tt.wantLon)
+			}
+			if !contains(displayName, tt.wantIn) {
+				t.Errorf("displayName = %q, want it to contain %q", displayName, tt.wantIn)
+			}
+		})
 	}
 }
 
