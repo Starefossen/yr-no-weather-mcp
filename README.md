@@ -55,7 +55,7 @@ docker run -p 8080:8080 yr-no-weather-mcp
 
 ## Usage with mcporter
 
-[mcporter](https://github.com/nicobailon/mcporter) can connect to this server as a remote MCP tool:
+[mcporter](https://github.com/steipete/mcporter) can connect to this server as a remote MCP tool:
 
 ```bash
 # Call the forecast tool directly
