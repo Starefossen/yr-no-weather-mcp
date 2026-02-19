@@ -1,0 +1,56 @@
+apiVersion: cilium.io/v2
+kind: CiliumNetworkPolicy
+metadata:
+  name: yr
+  namespace: mcp
+spec:
+  description: "Allow yr MCP traffic from Kourier, to MET.no and Geonorge APIs"
+  endpointSelector:
+    matchLabels:
+      serving.knative.dev/service: yr
+
+  ingress:
+    # Allow traffic from Kourier (Knative ingress)
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kourier-system
+            app: 3scale-kourier-gateway
+      toPorts:
+        - ports:
+            - port: "8080"
+              protocol: TCP
+
+    # Allow traffic from Knative activator (health probes & scale-from-zero)
+    - fromEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: knative-serving
+            app: activator
+      toPorts:
+        - ports:
+            - port: "8012"
+              protocol: TCP
+            - port: "8080"
+              protocol: TCP
+
+  egress:
+    # Allow DNS resolution
+    - toEndpoints:
+        - matchLabels:
+            io.kubernetes.pod.namespace: kube-system
+            k8s-app: kube-dns
+      toPorts:
+        - ports:
+            - port: "53"
+              protocol: UDP
+          rules:
+            dns:
+              - matchPattern: "*"
+
+    # Allow HTTPS to MET.no weather API and Geonorge geocoding
+    - toFQDNs:
+        - matchName: "api.met.no"
+        - matchName: "ws.geonorge.no"
+      toPorts:
+        - ports:
+            - port: "443"
+              protocol: TCP

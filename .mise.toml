@@ -1,0 +1,74 @@
+[env]
+APP_NAME = "yr"
+NAMESPACE = "mcp"
+
+# ================================
+# BUILD TASKS
+# ================================
+
+[tasks.build]
+description = "Build binaries and Docker image"
+run = """
+  ../../scripts/app-build-binaries.sh yr
+  ../../scripts/app-build-docker.sh yr
+"""
+
+# ================================
+# DEPLOYMENT TASKS
+# ================================
+
+[tasks.deploy]
+description = "Deploy to Knative"
+run = """
+  kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+  kubectl apply -f config/networkpolicy.yaml
+  ../../scripts/app-deploy.sh deploy ${APP_NAME} ${NAMESPACE}
+"""
+
+[tasks.full-deploy]
+description = "Build, push, and deploy to Knative"
+depends = ["build"]
+run = """
+  kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
+  kubectl apply -f config/networkpolicy.yaml
+  ../../scripts/app-deploy.sh deploy ${APP_NAME} ${NAMESPACE}
+"""
+
+[tasks.redeploy]
+description = "Rebuild, push, and force redeploy"
+run = """
+  ../../scripts/app-build-binaries.sh yr
+  ../../scripts/app-build-docker.sh yr
+  ../../scripts/app-deploy.sh redeploy ${APP_NAME} ${NAMESPACE}
+"""
+
+# ================================
+# MANAGEMENT TASKS
+# ================================
+
+[tasks.logs]
+description = "Show service logs"
+run = "../../scripts/app-deploy.sh logs ${APP_NAME} ${NAMESPACE}"
+
+[tasks.status]
+description = "Show service status"
+run = "../../scripts/app-deploy.sh status ${APP_NAME} ${NAMESPACE}"
+
+[tasks.url]
+description = "Show service URL"
+run = "../../scripts/app-deploy.sh url ${APP_NAME} ${NAMESPACE}"
+
+[tasks.test]
+description = "Test the deployed service"
+run = "../../scripts/app-deploy.sh test ${APP_NAME} ${NAMESPACE}"
+
+[tasks.delete]
+description = "Delete service"
+run = "../../scripts/app-deploy.sh delete ${APP_NAME} ${NAMESPACE}"
+
+[tasks.clean]
+description = "Clean build artifacts"
+run = """
+  rm -rf binaries/ 2>/dev/null || true
+  rm -f .build-tag 2>/dev/null || true
+"""
