@@ -2,6 +2,8 @@
 
 An [MCP](https://modelcontextprotocol.io/) server providing Norwegian weather data from [MET.no](https://api.met.no) (yr.no) with geocoding via [Norkart/Geonorge](https://ws.geonorge.no). Written in Go.
 
+Give any MCP-capable AI assistant access to real-time Norwegian weather — useful for home automation agents, daily briefing bots, trip planning assistants, or any scenario where an LLM needs to reason about current or upcoming weather in Norway.
+
 ## Features
 
 - **Three weather tools** — daily forecast, hourly forecast, and precipitation details
@@ -31,8 +33,9 @@ go build -o yr .
 ```
 
 The server starts on port 8080 by default:
-- **Health check**: http://localhost:8080/health
-- **MCP SSE endpoint**: http://localhost:8080/sse
+
+- Health check: `http://localhost:8080/health`
+- MCP SSE endpoint: `http://localhost:8080/sse`
 
 ### Docker
 
@@ -46,14 +49,31 @@ docker run -p 8080:8080 yr-no-weather-mcp
 
 ### Environment Variables
 
-| Variable   | Default                    | Description              |
-| ---------- | -------------------------- | ------------------------ |
-| `BASE_URL` | `http://localhost:8080`    | Public base URL for SSE  |
+| Variable   | Default                 | Description             |
+| ---------- | ----------------------- | ----------------------- |
+| `BASE_URL` | `http://localhost:8080` | Public base URL for SSE |
+
+## Usage with mcporter
+
+[mcporter](https://github.com/nicobailon/mcporter) can connect to this server as a remote MCP tool:
+
+```bash
+# Call the forecast tool directly
+mcporter call yr.get_forecast location=Bergen
+
+# Get hourly weather for Oslo
+mcporter call yr.get_hourly location=Oslo hours=6
+
+# Check precipitation for the week
+mcporter call yr.get_precipitation location=Tromsø period=week
+```
+
+Configure mcporter to point at your running instance (locally or deployed) and any MCP-compatible agent can use the weather tools.
 
 ## Architecture
 
-```
-MCP Client
+```text
+MCP Client (mcporter, Claude, etc.)
     │ HTTP/SSE (JSON-RPC)
     ▼
 yr-no-weather-mcp (:8080)
