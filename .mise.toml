@@ -19,6 +19,7 @@ run = """
 
 [tasks.deploy]
 description = "Deploy to Knative"
+raw = true
 run = """
   kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
   kubectl apply -f config/networkpolicy.yaml
@@ -27,6 +28,7 @@ run = """
 
 [tasks.full-deploy]
 description = "Build, push, and deploy to Knative"
+raw = true
 depends = ["build"]
 run = """
   kubectl create namespace ${NAMESPACE} --dry-run=client -o yaml | kubectl apply -f -
@@ -36,6 +38,7 @@ run = """
 
 [tasks.redeploy]
 description = "Rebuild, push, and force redeploy"
+raw = true
 run = """
   ../../scripts/app-build-binaries.sh yr
   ../../scripts/app-build-docker.sh yr
@@ -59,8 +62,13 @@ description = "Show service URL"
 run = "../../scripts/app-deploy.sh url ${APP_NAME} ${NAMESPACE}"
 
 [tasks.test]
-description = "Test the deployed service"
+description = "Test the deployed service (health check)"
 run = "../../scripts/app-deploy.sh test ${APP_NAME} ${NAMESPACE}"
+
+[tasks."test:mcp"]
+description = "Run comprehensive MCP protocol tests"
+raw = true
+run = "./test-mcp.sh"
 
 [tasks.delete]
 description = "Delete service"

@@ -30,6 +30,9 @@ All tools accept a `location` parameter — either a Norwegian place name (e.g. 
 ```bash
 go build -o yr .
 ./yr
+
+# Test MCP protocol
+mise run test:mcp
 ```
 
 The server starts on port 8080 by default:
