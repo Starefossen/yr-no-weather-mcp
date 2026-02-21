@@ -68,7 +68,7 @@ run = "../../scripts/app-deploy.sh test ${APP_NAME} ${NAMESPACE}"
 [tasks."test:mcp"]
 description = "Run comprehensive MCP protocol tests"
 raw = true
-run = "./test-mcp.sh"
+run = "./scripts/test-mcp.sh"
 
 [tasks.delete]
 description = "Delete service"
