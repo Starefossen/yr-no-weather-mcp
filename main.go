@@ -333,7 +333,7 @@ func windDirection(deg float64) string {
 
 // getStringArg extracts a string argument from the request
 func getStringArg(req mcp.CallToolRequest, key string) (string, bool) {
-	v, ok := req.Params.Arguments[key]
+	v, ok := req.GetArguments()[key]
 	if !ok {
 		return "", false
 	}
