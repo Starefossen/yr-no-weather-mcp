@@ -258,7 +258,7 @@ func (ws *WeatherServer) fetchWeather(ctx context.Context, lat, lon float64) (*M
 		if err != nil {
 			return nil, fmt.Errorf("failed to decompress response: %w", err)
 		}
-		defer gz.Close()
+		defer func() { _ = gz.Close() }()
 		reader = gz
 	}
 

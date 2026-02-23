@@ -669,20 +669,6 @@ func TestEndToEndCoordinateInput(t *testing.T) {
 
 // helpers
 
-func fetchMockData(t *testing.T, url string) *MetResponse {
-	t.Helper()
-	resp, err := http.Get(url)
-	if err != nil {
-		t.Fatalf("mock fetch failed: %v", err)
-	}
-	defer resp.Body.Close()
-	var data MetResponse
-	if err := json.NewDecoder(resp.Body).Decode(&data); err != nil {
-		t.Fatalf("mock decode failed: %v", err)
-	}
-	return &data
-}
-
 func contains(s, substr string) bool {
 	return len(s) >= len(substr) && (s == substr || len(s) > 0 && containsStr(s, substr))
 }

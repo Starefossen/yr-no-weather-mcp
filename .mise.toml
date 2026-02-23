@@ -80,3 +80,33 @@ run = """
   rm -rf binaries/ 2>/dev/null || true
   rm -f .build-tag 2>/dev/null || true
 """
+
+# ================================
+# CODE QUALITY TASKS
+# ================================
+
+[tasks.lint]
+description = "Run golangci-lint"
+run = "golangci-lint run ./..."
+
+[tasks."lint:fix"]
+description = "Run golangci-lint with auto-fix"
+run = "golangci-lint run --fix ./..."
+
+[tasks.vuln]
+description = "Check for known vulnerabilities"
+run = "govulncheck ./..."
+
+[tasks.check]
+description = "Run all quality checks (lint, vuln, vet, test)"
+run = """
+  echo "==> Running golangci-lint..."
+  golangci-lint run ./...
+  echo "==> Running govulncheck..."
+  govulncheck ./...
+  echo "==> Running go vet..."
+  go vet ./...
+  echo "==> Running go test..."
+  go test ./...
+  echo "==> All checks passed!"
+"""
