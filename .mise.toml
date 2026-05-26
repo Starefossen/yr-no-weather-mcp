@@ -97,16 +97,14 @@ run = "golangci-lint run --fix ./..."
 description = "Check for known vulnerabilities"
 run = "govulncheck ./..."
 
+[tasks.fix]
+description = "Run all auto-fixers (fmt, lint)"
+run = "go fmt ./... && golangci-lint run --fix ./..."
+
+[tasks.outdated]
+description = "Check for outdated dependencies"
+run = "go list -m -u all"
+
 [tasks.check]
-description = "Run all quality checks (lint, vuln, vet, test)"
-run = """
-  echo "==> Running golangci-lint..."
-  golangci-lint run ./...
-  echo "==> Running govulncheck..."
-  govulncheck ./...
-  echo "==> Running go vet..."
-  go vet ./...
-  echo "==> Running go test..."
-  go test ./...
-  echo "==> All checks passed!"
-"""
+description = "Run all quality checks (lint, vuln, test)"
+run = "../../scripts/go-check.sh"
