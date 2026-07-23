@@ -670,6 +670,9 @@ func main() {
 			w.Write([]byte("ok"))
 			return
 		}
+		// Bypass DNS rebinding check in mcp-go v0.56.0.
+		// Knative's queue-proxy sends requests over loopback but preserves the original Host header.
+		r.Host = "localhost"
 		sseServer.ServeHTTP(w, r)
 	})
 
