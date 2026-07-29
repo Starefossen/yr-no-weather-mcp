@@ -21,10 +21,10 @@ import (
 )
 
 const (
-	defaultMetURL  = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
-	defaultGeoURL  = "https://ws.geonorge.no/stedsnavn/v1/sted"
-	userAgent      = "yr-no-weather-mcp/1.0 github.com/starefossen/yr-no-weather-mcp"
-	defaultPort    = "8080"
+	defaultMetURL   = "https://api.met.no/weatherapi/locationforecast/2.0/compact"
+	defaultGeoURL   = "https://ws.geonorge.no/stedsnavn/v1/sted"
+	userAgent       = "yr-no-weather-mcp/1.0 github.com/starefossen/yr-no-weather-mcp"
+	defaultPort     = "8080"
 	geocodeCacheTTL = 24 * time.Hour
 )
 
