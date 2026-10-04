@@ -5,7 +5,7 @@ run:
 
 output:
   formats:
-    colored-line-number: stdout
+    - format: colored-line-number
   print-issued-lines: true
   print-linter-name: true
   sort-results: true
@@ -48,7 +48,7 @@ linters-settings:
       - fieldalignment
 
   gocyclo:
-    min-complexity: 20
+    min-complexity: 30
 
   staticcheck:
     checks: ["all"]

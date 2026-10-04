@@ -2,7 +2,7 @@ module github.com/starefossen/yr-no-weather-mcp
 
 go 1.26.0
 
-require github.com/mark3labs/mcp-go v1.0.0
+require github.com/mark3labs/mcp-go v1.1.1
 
 require (
 	github.com/google/jsonschema-go v0.4.3 // indirect
