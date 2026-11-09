@@ -66,13 +66,20 @@ spec:
             - ALL
       volumes:
       - name: mcp-callers
-        secret:
-          secretName: mcp-auth-token
-          items:
-          - key: varden
-            path: read/varden
-          - key: operator
-            path: read/operator
-          - key: radio-producer
-            path: read/radio-producer
+        projected:
+          sources:
+          - secret:
+              name: mcp-auth-token
+              items:
+              - key: varden
+                path: read/varden
+              - key: operator
+                path: read/operator
+              - key: radio-producer
+                path: read/radio-producer
+          - configMap:
+              name: yr-jwks
+              items:
+              - key: read.json
+                path: read/jwks.json
       serviceAccountName: default
