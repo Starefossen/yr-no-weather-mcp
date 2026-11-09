@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/starefossen/home/libs/mcpauth"
 	"io"
 	"log"
 	"math"
@@ -608,6 +609,19 @@ func (ws *WeatherServer) handleGetPrecipitation(ctx context.Context, req mcp.Cal
 	return mcp.NewToolResultText(sb.String()), nil
 }
 
+func newHandler(auth *mcpauth.Auth, sseServer http.Handler) http.Handler {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/health", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte("ok"))
+	})
+	mux.Handle("/", auth.Require("read", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Bypass DNS rebinding check in mcp-go v0.56.0.
+		r.Host = "localhost"
+		sseServer.ServeHTTP(w, r)
+	})))
+	return mux
+}
+
 func main() {
 	ws := NewWeatherServer()
 
@@ -663,18 +677,11 @@ func main() {
 		server.WithBaseURL(baseURL),
 	)
 
-	// Wrap SSE server with health endpoint
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/health" {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("ok"))
-			return
-		}
-		// Bypass DNS rebinding check in mcp-go v0.56.0.
-		// Knative's queue-proxy sends requests over loopback but preserves the original Host header.
-		r.Host = "localhost"
-		sseServer.ServeHTTP(w, r)
-	})
+	auth, err := mcpauth.Load(os.Getenv("MCP_CALLERS_DIR"))
+	if err != nil {
+		log.Fatalf("auth config: %v", err)
+	}
+	handler := newHandler(auth, sseServer)
 
 	log.Printf("yr MCP server starting on :%s", defaultPort)
 	log.Printf("Health: http://localhost:%s/health", defaultPort)
