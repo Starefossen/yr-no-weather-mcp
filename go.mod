@@ -1,6 +1,6 @@
 module github.com/starefossen/yr-no-weather-mcp
 
-go 1.26.0
+go 1.26.10
 
 require github.com/mark3labs/mcp-go v1.1.1
 
@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 // indirect
 	github.com/spf13/cast v1.10.0 // indirect
+	github.com/starefossen/mcpauth v0.1.0
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	golang.org/x/text v0.42.0 // indirect
 )
